@@ -8,8 +8,22 @@ void main() {
   runApp(const MyApp());
 }
 
+Color drinkStatusColor(String status) {
+  switch (status) {
+    case "Ready":
+      return Colors.blue;
+    case "Preparing":
+      return Colors.orange;
+    case "Done":
+      return Colors.green;
+    default:
+      return Colors.yellow;
+  }
+}
+
 Future<List<Order>> fetchOrder() async {
-  final response = await http.get(Uri.parse('http://127.0.0.1:8080/orders'));
+  final response =
+      await http.get(Uri.parse('http://127.0.0.1:8080/app/orders'));
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
@@ -51,11 +65,13 @@ class Order {
   final String customerName;
   final Coffee coffee;
   final String drink;
+  final String status;
 
   const Order({
     required this.customerName,
     required this.coffee,
     required this.drink,
+    required this.status,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -63,6 +79,7 @@ class Order {
       customerName: json['customer'],
       coffee: Coffee.fromJson(json['coffee']),
       drink: json['drink'],
+      status: json['status'],
     );
   }
 
@@ -148,48 +165,25 @@ class _MyHomePageState extends State<MyHomePage> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   List<Order> data = snapshot.data!;
-                  return ListView.builder(
+                  return ListView.separated(
                     itemCount: data.length,
+                    separatorBuilder: (BuildContext context, int index) =>
+                        const Divider(),
                     itemBuilder: (BuildContext context, int index) {
-                      return Container(
-                        padding: const EdgeInsets.all(100),
-                        decoration: BoxDecoration(
-                            border: Border.all(color: Colors.blueAccent)),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              /*1*/
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  /*2*/
-                                  Container(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      data[index].customerName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    '${data[index].coffee.region} - ${data[index].drink}',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            /*3*/
-                            Icon(
-                              Icons.circle,
-                              color: Colors.green[500],
-                            ),
-                            const Text('Ready'),
-                          ],
+                      return Card(
+                          child: ListTile(
+                        title: Text(data[index].customerName),
+                        subtitle: Text(
+                            '${data[index].coffee.region} - ${data[index].drink}'),
+                        trailing: Icon(
+                          Icons.circle,
+                          color: drinkStatusColor(data[index].status),
                         ),
-                      );
+                        leading: const Icon(
+                          Icons.es,
+                          color: Colors.grey,
+                        ),
+                      ));
                     },
                   );
                 } else if (snapshot.hasError) {
