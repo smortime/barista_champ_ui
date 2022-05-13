@@ -21,6 +21,28 @@ Color drinkStatusColor(String status) {
   }
 }
 
+ListView getOrder(List<Order> data) {
+  return ListView.separated(
+    itemCount: data.length,
+    separatorBuilder: (BuildContext context, int index) => const Divider(),
+    itemBuilder: (BuildContext context, int index) {
+      return Card(
+          child: ListTile(
+        title: Text(data[index].customerName),
+        subtitle: Text('${data[index].coffee.region} - ${data[index].drink}'),
+        trailing: Icon(
+          Icons.circle,
+          color: drinkStatusColor(data[index].status),
+        ),
+        leading: const Icon(
+          Icons.coffee_rounded,
+          color: Colors.grey,
+        ),
+      ));
+    },
+  );
+}
+
 Future<List<Order>> fetchOrder() async {
   final response =
       await http.get(Uri.parse('http://127.0.0.1:8080/app/orders'));
@@ -134,6 +156,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late Future<List<Order>> futureOrder;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -157,7 +180,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         home: Scaffold(
           appBar: AppBar(
-            title: const Text('Smort n\' Su Coffee'),
+            title: const Text('Smort n\' Su\'s Coffee'),
           ),
           body: Center(
             child: FutureBuilder<List<Order>>(
@@ -165,35 +188,93 @@ class _MyHomePageState extends State<MyHomePage> {
               builder: (context, snapshot) {
                 if (snapshot.hasData) {
                   List<Order> data = snapshot.data!;
-                  return ListView.separated(
-                    itemCount: data.length,
-                    separatorBuilder: (BuildContext context, int index) =>
-                        const Divider(),
-                    itemBuilder: (BuildContext context, int index) {
-                      return Card(
-                          child: ListTile(
-                        title: Text(data[index].customerName),
-                        subtitle: Text(
-                            '${data[index].coffee.region} - ${data[index].drink}'),
-                        trailing: Icon(
-                          Icons.circle,
-                          color: drinkStatusColor(data[index].status),
-                        ),
-                        leading: const Icon(
-                          Icons.es,
-                          color: Colors.grey,
-                        ),
-                      ));
-                    },
-                  );
+                  return getOrder(data);
                 } else if (snapshot.hasError) {
                   return Text('${snapshot.error}');
                 }
-
                 // By default, show a loading spinner.
                 return const CircularProgressIndicator();
               },
             ),
+          ),
+          floatingActionButton: ElevatedButton.icon(
+            onPressed: () {
+              showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      content: Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          Positioned(
+                            right: -40.0,
+                            top: -40.0,
+                            child: InkResponse(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const CircleAvatar(
+                                child: Icon(Icons.close),
+                                backgroundColor: Colors.red,
+                              ),
+                            ),
+                          ),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: TextFormField(
+                                      decoration: const InputDecoration(
+                                          border: UnderlineInputBorder(),
+                                          labelText: "Customer")),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: TextFormField(
+                                    decoration: const InputDecoration(
+                                        border: UnderlineInputBorder(),
+                                        labelText: "Customer"),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: TextFormField(
+                                    decoration: const InputDecoration(
+                                        border: UnderlineInputBorder(),
+                                        labelText: "Customer"),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: ElevatedButton(
+                                    child: const Text("Order"),
+                                    style: ElevatedButton.styleFrom(
+                                        primary: Colors.blueAccent,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 50, vertical: 20),
+                                        textStyle: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.normal)),
+                                    onPressed: () {
+                                      if (_formKey.currentState!.validate()) {
+                                        _formKey.currentState!.save();
+                                      }
+                                    },
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+            },
+            icon: const Icon(Icons.add, size: 24),
+            label: const Text("PLACE ORDER"),
           ),
         ),
       );
